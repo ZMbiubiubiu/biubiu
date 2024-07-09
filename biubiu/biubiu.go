@@ -1,24 +1,22 @@
 package biubiu
 
 import (
-	"fmt"
 	"net/http"
 )
 
-type HandlerFunc func(w http.ResponseWriter, r *http.Request)
+type HandlerFunc func(c *Context)
 
 // Engine implement the interface of http.Handler
 type Engine struct {
-	router map[string]HandlerFunc
+	router *router
 }
 
 func New() *Engine {
-	return &Engine{router: make(map[string]HandlerFunc)}
+	return &Engine{router: newRouter()}
 }
 
 func (e *Engine) addRouter(method, pattern string, handler HandlerFunc) {
-	key := method + "-" + pattern
-	e.router[key] = handler
+	e.router.addRoute(method, pattern, handler)
 }
 
 func (e *Engine) GET(pattern string, handler HandlerFunc) {
@@ -34,11 +32,6 @@ func (e *Engine) Run(addr string) (err error) {
 }
 
 func (e *Engine) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	key := r.Method + "-" + r.URL.Path
-	handler, ok := e.router[key]
-	if ok {
-		handler(w, r)
-	} else {
-		fmt.Fprintf(w, "404 NOT FOUND: %s\n", r.URL)
-	}
+	c := newContext(w, r)
+	e.router.handle(c)
 }

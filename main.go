@@ -1,23 +1,27 @@
 package main
 
 import (
-	"fmt"
 	"net/http"
 
 	"biubiu"
 )
 
 func main() {
-	engine := biubiu.New()
-	engine.GET("/", func(w http.ResponseWriter, req *http.Request) {
-		fmt.Fprintf(w, "URL.Path = %q\n", req.URL.Path)
+	r := biubiu.New()
+	r.GET("/", func(c *biubiu.Context) {
+		c.HTML(http.StatusOK, "<h1>Hello Gee</h1>")
+	})
+	r.GET("/hello", func(c *biubiu.Context) {
+		// expect /hello?name=biubiubiu
+		c.String(http.StatusOK, "hello %s, you're at %s\n", c.Query("name"), c.Path)
 	})
 
-	engine.GET("/hello", func(w http.ResponseWriter, req *http.Request) {
-		for k, v := range req.Header {
-			fmt.Fprintf(w, "Header[%q] = %q\n", k, v)
-		}
+	r.POST("/login", func(c *biubiu.Context) {
+		c.JSON(http.StatusOK, biubiu.H{
+			"username": c.PostForm("username"),
+			"password": c.PostForm("password"),
+		})
 	})
 
-	engine.Run(":9999")
+	r.Run(":9999")
 }
