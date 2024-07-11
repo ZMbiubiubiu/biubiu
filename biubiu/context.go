@@ -14,6 +14,7 @@ type Context struct {
 	Path       string
 	Method     string
 	StatusCode int
+	Params     map[string]string
 }
 
 func newContext(w http.ResponseWriter, r *http.Request) *Context {
@@ -56,6 +57,10 @@ func (c *Context) JSON(code int, obj interface{}) {
 	if err := encoder.Encode(obj); err != nil {
 		http.Error(c.Writer, err.Error(), 500)
 	}
+}
+
+func (c *Context) NotFound(msg string) {
+	http.Error(c.Writer, msg, http.StatusNotFound)
 }
 
 func (c *Context) Data(code int, data []byte) {

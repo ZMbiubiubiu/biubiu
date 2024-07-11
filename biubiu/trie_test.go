@@ -45,25 +45,26 @@ func TestParsePath(t *testing.T) {
 func TestInsertAndSearch(t *testing.T) {
 	var tables = []struct {
 		fullPath string
-		value    int
+		handler  HandlerFunc
 	}{
 		{
 			fullPath: "/hello/world",
-			value:    2,
+			handler: HandlerFunc(func(c *Context) {
+			}),
 		},
 		{
 			fullPath: "/hello/",
-			value:    1,
+			handler: HandlerFunc(func(c *Context) {
+			}),
 		},
 	}
 
 	trie := NewTrie()
 
 	for _, table := range tables {
-		trie.Insert(table.fullPath, table.value)
+		trie.Insert(table.fullPath, table.handler)
 		got := trie.Search(table.fullPath)
 		assert.NotNil(t, got)
-		assert.Equal(t, table.value, got.(int))
 		trie.Clear()
 		got = trie.Search(table.fullPath)
 		assert.Nil(t, got)

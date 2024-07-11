@@ -12,12 +12,16 @@ func NewTrie() *TrieTree {
 	return &TrieTree{root: &node{}}
 }
 
-func (t *TrieTree) Search(fullPath string) interface{} {
-	return t.root.search(fullPath)
+func (t *TrieTree) Search(pathPattern string) (HandlerFunc, string) {
+	node := t.root.search(pathPattern)
+	if node == nil {
+		return nil, ""
+	}
+	return node.handler, node.pathPattern
 }
 
-func (t *TrieTree) Insert(fullPath string, value interface{}) {
-	t.root.insert(fullPath, value)
+func (t *TrieTree) Insert(pathPattern string, handler HandlerFunc) {
+	t.root.insert(pathPattern, handler)
 }
 
 func (t *TrieTree) Clear() {
@@ -25,15 +29,15 @@ func (t *TrieTree) Clear() {
 }
 
 type node struct {
-	fullPath string
-	partPath string
-	isWild   bool // 是否模糊匹配：*/:var
-	value    interface{}
-	children []*node
+	pathPattern string
+	partPath    string
+	isWild      bool // 是否模糊匹配：*/:var
+	handler     HandlerFunc
+	children    []*node
 }
 
-func parsePath(fullPath string) []string {
-	splitPath := strings.Split(fullPath, "/")
+func parsePath(pathPattern string) []string {
+	splitPath := strings.Split(pathPattern, "/")
 
 	var parts = make([]string, 0, len(splitPath))
 	for _, v := range splitPath {
@@ -66,8 +70,8 @@ func (n *node) matchChildren(part string) []*node {
 	return children
 }
 
-func (n *node) insert(fullPath string, value interface{}) {
-	parts := parsePath(fullPath)
+func (n *node) insert(pathPattern string, handler HandlerFunc) {
+	parts := parsePath(pathPattern)
 	for _, part := range parts {
 		child := n.matchFirstChild(part)
 		if child == nil {
@@ -80,12 +84,12 @@ func (n *node) insert(fullPath string, value interface{}) {
 		n = child
 	}
 	// for the last node
-	n.fullPath = fullPath
-	n.value = value
+	n.pathPattern = pathPattern
+	n.handler = handler
 }
 
-func (n *node) search(fullPath string) interface{} {
-	parts := parsePath(fullPath)
+func (n *node) search(pathPattern string) *node {
+	parts := parsePath(pathPattern)
 	var children = []*node{n}
 	for _, part := range parts {
 		children = n.doSearch(part, children)
@@ -93,7 +97,7 @@ func (n *node) search(fullPath string) interface{} {
 	if len(children) == 0 {
 		return nil
 	}
-	return children[0].value
+	return children[0]
 }
 
 func (n *node) doSearch(part string, nodes []*node) []*node {
